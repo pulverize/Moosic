@@ -1,25 +1,19 @@
 package co.moosic.music;
 
 import com.kaaz.configuration.ConfigurationBuilder;
-import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.entities.VoiceChannel;
-import net.dv8tion.jda.core.managers.AudioManager;
+
+import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
 
 
-public class Login {
+class Login {
     static JDA Jda;
-    static TrackScheduler scheduler;
 
     public static void main(String args[]) {
         try {
@@ -46,29 +40,14 @@ public class Login {
             e.printStackTrace();
             System.exit(1);
         }
-        AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        AudioSourceManagers.registerRemoteSources(playerManager);
-        AudioSourceManagers.registerLocalSource(playerManager);
-        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
+        MusicPlayer.Initialize();
         System.out.println("Created new player manager");
         VoiceChannel channel = Jda.getVoiceChannelById(Config.voice_channel_id);
         if (channel == null) {
             System.out.println("Could not find the channel, make sure the ID is correct and that the bot can see it.");
             System.exit(1);
         }
-        AudioManager audioManager = channel.getGuild().getAudioManager();
-        try {
-            audioManager.openAudioConnection(channel);
-            System.out.println("Joined designated voice channel " + channel.getName());
-        } catch (Exception ex) {
-            System.out.println("Failed to join the voice channel! " + ex.getMessage());
-            System.exit(1);
-        }
-        AudioPlayer player = playerManager.createPlayer();
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
-        scheduler = new TrackScheduler(player, playerManager);
-        player.addListener(scheduler);
-        player.setVolume(Config.volume);
+        MusicPlayer.AttuneToChannel(channel);
     }
 
     private static boolean isNas() {

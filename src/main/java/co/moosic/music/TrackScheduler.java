@@ -20,9 +20,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 public class TrackScheduler extends AudioEventAdapter {
-    AudioPlayer player;
-    private AudioPlayerManager playerManager;
-    private List<String> AutoPlay = new ArrayList<>();
+    private final AudioPlayer player;
+    private final AudioPlayerManager playerManager;
+    private final List<String> AutoPlay = new ArrayList<>();
     private final Random RANDOM = new Random();
 
     TrackScheduler(AudioPlayer player, AudioPlayerManager playerManager) {
@@ -36,13 +36,13 @@ public class TrackScheduler extends AudioEventAdapter {
         }
         this.playerManager = playerManager;
         this.player = player;
-        proccessTracks();
+        processTracks();
         if (player.getPlayingTrack() == null) {
             nextTrack();
         }
     }
 
-    private void proccessTracks() {
+    private void processTracks() {
         System.out.println("Processing " + AutoPlay.size() + " songs");
         for (String song : new ArrayList<>(AutoPlay)) {
             if (isPlaylist(song)) {

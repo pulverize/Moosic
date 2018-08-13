@@ -9,12 +9,12 @@ import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
 
-public class MessageHandler extends ListenerAdapter {
+class MessageHandler extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent e) {
         if (e.getMessage().getContentRaw().toLowerCase().startsWith(Config.command_prefix.toLowerCase() + "np")) {
-            AudioTrack PlayingTrack = Login.scheduler.player.getPlayingTrack();
+            AudioTrack PlayingTrack = MusicPlayer.GetPlayingTrack();
             e.getChannel().sendMessage(new EmbedBuilder()
                     .setAuthor("Now Playing", PlayingTrack.getInfo().uri, null)
                     .setColor(Color.GREEN)
