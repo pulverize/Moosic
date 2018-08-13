@@ -5,7 +5,7 @@ import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 class MessageHandler extends ListenerAdapter {
-
+private static boolean _deletePermissionNotified = false;
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent e) {
         String message = e.getMessage().getContentRaw();
@@ -27,9 +27,17 @@ class MessageHandler extends ListenerAdapter {
                 case "volume":
                     if(commandWords.length > 1) {
                         messenger.SendMessage(
-                                MusicPlayer.TrySetVolume(commandWords[1])
+                            MusicPlayer.TrySetVolume(commandWords[1])
                         );
                     }
+                    break;
+                case "next":
+                case "skip":
+                    messenger.SendMessage(
+                            commandWords.length == 1 ?
+                            MusicPlayer.TrySkipSongs(1):
+                            MusicPlayer.TrySkipSongs(commandWords[1])
+                    );
                     break;
                 default:
                     messenger.SendMessage("I don't know the command '" + command + "'. Try again.");
@@ -39,7 +47,9 @@ class MessageHandler extends ListenerAdapter {
             try {
                 e.getMessage().delete().complete();
             }catch(InsufficientPermissionException ex){
-                messenger.SendMessage("I could not delete your command. Please give me permission to do so.");
+                if(!_deletePermissionNotified)
+                    messenger.SendMessage("I could not delete your command. Please give me permission to do so.");
+                _deletePermissionNotified = true;
             }
             catch(Exception ignored){
 

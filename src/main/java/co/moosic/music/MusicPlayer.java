@@ -12,8 +12,9 @@ import net.dv8tion.jda.core.entities.VoiceChannel;
 class MusicPlayer {
     private static AudioPlayerManager _playerManager;
     private static AudioPlayer _audioPlayer;
+    private static TrackScheduler _trackScheduler;
 
-    public static void Initialize(){
+    public static void Initialize() {
         _playerManager = new DefaultAudioPlayerManager();
 
         AudioSourceManagers.registerRemoteSources(_playerManager);
@@ -42,29 +43,52 @@ class MusicPlayer {
         }
         _audioPlayer = _playerManager.createPlayer();
         _audioManager.setSendingHandler(new AudioPlayerSendHandler(_audioPlayer));
-        TrackScheduler _trackScheduler = new TrackScheduler(_audioPlayer, _playerManager);
+        _trackScheduler = new TrackScheduler(_audioPlayer, _playerManager);
         _audioPlayer.addListener(_trackScheduler);
         _audioPlayer.setVolume(Config.volume);
     }
 
-    public static String TrySetVolume(String maybeVolume){
+    public static String TrySetVolume(String maybeVolume) {
         Short volumeNumber;
-        try{
+        try {
             volumeNumber = Short.parseShort(maybeVolume);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             return "I didn't understand that volume. Give me a number.";
         }
 
-        if(volumeNumber > 100 || volumeNumber < 1)
+        if (volumeNumber > 100 || volumeNumber < 1)
             return "I need a number between 1 and 100, please.";
 
-        volumeNumber = (short)Math.ceil(volumeNumber.doubleValue() * 1.5);
+        volumeNumber = (short) Math.ceil(volumeNumber.doubleValue() * 1.5);
 
         _audioPlayer.setVolume(volumeNumber);
         return "Volume set to " + maybeVolume;
     }
 
-    public static AudioTrack GetPlayingTrack(){
+    public static AudioTrack GetPlayingTrack() {
         return _audioPlayer.getPlayingTrack();
+    }
+
+    public static String TrySkipSongs(String maybeSongCount) {
+        Short songsToSkip;
+        try {
+            songsToSkip = Short.parseShort(maybeSongCount);
+            // following due to behavioral issues with this functionality
+            if(songsToSkip > 1)
+                throw new IllegalArgumentException("Can't skip more than one song.");
+        } catch (Exception ex) {
+            return "I don't know how to skip " + maybeSongCount + " songs...";
+        }
+        return TrySkipSongs(songsToSkip);
+    }
+
+    public static String TrySkipSongs(int songsToSkip) {
+        try {
+            for (int i = 0; i < songsToSkip; i++)
+                _trackScheduler.nextTrack();
+            return "Skipping " + songsToSkip + " tracks.";
+        } catch (Exception ex) {
+            return "Couldn't skip that many, or some other problem with skipping.";
+        }
     }
 }

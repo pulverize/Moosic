@@ -5,13 +5,13 @@ import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDABuilder;
 
 import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 
 import javax.security.auth.login.LoginException;
 
 class BotManager {
     private static JDA _jda;
-    public static JDA get_jda(){ return _jda; }
 
     public static void Initialize() {
         try {
@@ -19,7 +19,7 @@ class BotManager {
                     new JDABuilder(AccountType.BOT)
                     .setToken(Config.discord_token);
 
-            if (isNas()) {
+            if (GetIsNasSupported()) {
                 System.out.println("Enabling native audio sending");
                 builder.setAudioSendFactory(new NativeAudioSendFactory());
             }
@@ -43,11 +43,15 @@ class BotManager {
         return _jda.getVoiceChannelById(channelId);
     }
 
-    private static boolean isNas() {
+    private static boolean GetIsNasSupported() {
         String os = System.getProperty("os.name");
         return (os.contains("Windows") || os.contains("Linux"))
                 && !System.getProperty("os.arch").equalsIgnoreCase("arm")
                 && !System.getProperty("os.arch").equalsIgnoreCase("arm-linux");
 
+    }
+
+    public static void SetPlaying(String title) {
+        _jda.getPresence().setGame(Game.playing("▶ " + title));
     }
 }
