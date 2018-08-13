@@ -1,5 +1,6 @@
 package co.moosic.music;
 
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.entities.TextChannel;
 
@@ -9,18 +10,15 @@ import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
 class MessageManager {
-    private static TextChannel _lastChannel;
-
-    public static void SendMessage(String message){
-        SendMessage(_lastChannel,message);
+    private final TextChannel _textChannel;
+    public MessageManager(TextChannel channel){
+        _textChannel = channel;
     }
-
-    public static void SendMessage(TextChannel channel, String message){
-        SendMessage(channel,message,"DJ here");
+    public void SendMessage(String message){
+        SendMessage(message,"DJ here");
     }
-    private static void SendMessage(TextChannel channel, String message, String title){
-        _lastChannel = channel;
-        channel.sendMessage(
+    private void SendMessage(String message, String title){
+        _textChannel.sendMessage(
                 new EmbedBuilder()
                         .setColor(Color.GREEN)
                         .addField(title,message,true)
@@ -28,9 +26,23 @@ class MessageManager {
         ).queue();
     }
 
-    public static void SendTrackInfo(TextChannel channel, AudioTrack playingTrack){
-        _lastChannel = channel;
-        channel.sendMessage(
+    public void SendPlayingTrackInfo(){
+
+        AudioTrack playingTrack = MusicPlayer.GetPlayingTrack();
+        if(playingTrack == null)
+            SendMessage("No track appears to be playing.");
+        assert playingTrack != null;
+        AudioTrackState trackState = playingTrack.getState();
+        if (trackState == null)
+            SendMessage( "Couldn't figure out WHAT is going on with that track. Something went seriously sideways.");
+        else if(trackState != AudioTrackState.PLAYING)
+            SendMessage("There is a track that should be playing but it is inactive, finished, seeking, or loading. Ask me again.");
+        else
+            SendTrackInfo( playingTrack);
+    }
+
+    private void SendTrackInfo(AudioTrack playingTrack){
+        _textChannel.sendMessage(
             new EmbedBuilder()
                 .setAuthor("Now Playing", playingTrack.getInfo().uri, null)
                 .setColor(Color.GREEN)
