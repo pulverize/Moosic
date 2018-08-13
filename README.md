@@ -11,3 +11,5 @@ Once setup, moosic will join the designated voice channel and play songs randoml
 You can host the bot for free by following [this](https://github.com/Repulser/Moosic/wiki/Hosting-on-heroku-for-free) guide
 
 **Or host it yourself by following [this](https://github.com/Repulser/Moosic/wiki/Running-the-bot) guide.**
+
+https://ci.appveyor.com/api/projects/status/8ljtgt1ux6x28e3v?svg=true
