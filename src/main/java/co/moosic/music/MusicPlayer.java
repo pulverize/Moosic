@@ -6,61 +6,36 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.managers.AudioManager;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 
 class MusicPlayer {
     private static AudioPlayerManager _playerManager;
-
-    public AudioPlayerManager get_playerManager() {
-        return _playerManager;
-    }
-
-    public static void set_playerManager(AudioPlayerManager apm) {
-        AudioSourceManagers.registerRemoteSources(apm);
-        AudioSourceManagers.registerLocalSource(apm);
-        apm.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
-
-        MusicPlayer._playerManager = apm;
-    }
-
     private static AudioManager _audioManager;
-
-    public static AudioManager get_audioManager() {
-        return _audioManager;
-    }
-
-    private static void set_audioManager(AudioManager am) {
-        MusicPlayer._audioManager = am;
-    }
-
     private static TrackScheduler _trackScheduler;
-
-    public static TrackScheduler get_trackScheduler() {
-        return _trackScheduler;
-    }
-
-    private static void set_trackScheduler(TrackScheduler ts) {
-        MusicPlayer._trackScheduler = ts;
-    }
-
     private static AudioPlayer _audioPlayer;
-
-    public static AudioPlayer get_audioPlayer() {
-        return _audioPlayer;
-    }
-
-    private static void set_audioPlayer(AudioPlayer ap) {
-        _audioPlayer = ap;
-        _audioManager.setSendingHandler(new AudioPlayerSendHandler(ap));
-    }
 
     public static void Initialize(){
         _playerManager = new DefaultAudioPlayerManager();
+
+        AudioSourceManagers.registerRemoteSources(_playerManager);
+        AudioSourceManagers.registerLocalSource(_playerManager);
+        _playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
+
+        System.out.println("Created new player manager");
+
+        VoiceChannel channel = BotManager.GetVoiceChannel(Config.voice_channel_id);
+        if (channel == null) {
+            System.out.println("Could not find the channel, make sure the ID is correct and that the bot can see it.");
+            System.exit(1);
+        }
+
+        AttuneToChannel(channel);
     }
 
-    public static void AttuneToChannel(VoiceChannel channel) {
-        set_audioManager(channel.getGuild().getAudioManager());
+    private static void AttuneToChannel(VoiceChannel channel) {
+        _audioManager = channel.getGuild().getAudioManager();
         try {
             _audioManager.openAudioConnection(channel);
             System.out.println("Joined designated voice channel " + channel.getName());
@@ -68,10 +43,29 @@ class MusicPlayer {
             System.out.println("Failed to join the voice channel! " + ex.getMessage());
             System.exit(1);
         }
-        set_audioPlayer(_playerManager.createPlayer());
-        set_trackScheduler(new TrackScheduler(_audioPlayer, _playerManager));
+        _audioPlayer = _playerManager.createPlayer();
+        _audioManager.setSendingHandler(new AudioPlayerSendHandler(_audioPlayer));
+        _trackScheduler = new TrackScheduler(_audioPlayer, _playerManager);
         _audioPlayer.addListener(_trackScheduler);
         _audioPlayer.setVolume(Config.volume);
+    }
+
+    public static void TrySetVolume(String maybeVolume){
+        Short volumeNumber;
+        try{
+            volumeNumber = Short.parseShort(maybeVolume);
+        }catch(Exception ex){
+            MessageManager.SendMessage("I didn't understand that volume. Give me a number.");
+            return;
+        }
+
+        if(volumeNumber > 100 || volumeNumber < 1)
+            MessageManager.SendMessage("I need a number between 1 and 100, please.");
+
+        volumeNumber = (short)Math.ceil(volumeNumber.doubleValue() * 1.5);
+
+        _audioPlayer.setVolume(volumeNumber);
+        MessageManager.SendMessage("Volume set to " + maybeVolume);
     }
 
     public static AudioTrack GetPlayingTrack(){

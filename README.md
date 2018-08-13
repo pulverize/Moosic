@@ -12,4 +12,4 @@ You can host the bot for free by following [this](https://github.com/Repulser/Mo
 
 **Or host it yourself by following [this](https://github.com/Repulser/Moosic/wiki/Running-the-bot) guide.**
 
-https://ci.appveyor.com/api/projects/status/8ljtgt1ux6x28e3v?svg=true
+![appVeyor status](https://ci.appveyor.com/api/projects/status/8ljtgt1ux6x28e3v?svg=true)

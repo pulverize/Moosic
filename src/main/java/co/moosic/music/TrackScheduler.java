@@ -19,20 +19,20 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
-public class TrackScheduler extends AudioEventAdapter {
+class TrackScheduler extends AudioEventAdapter {
     private final AudioPlayer player;
     private final AudioPlayerManager playerManager;
-    private final List<String> AutoPlay = new ArrayList<>();
+    private final List<String> _playlist = new ArrayList<>();
     private final Random RANDOM = new Random();
 
     TrackScheduler(AudioPlayer player, AudioPlayerManager playerManager) {
         try (Scanner scanner = new Scanner(new File("songs.txt"))) {
             while (scanner.hasNextLine()) {
-                AutoPlay.add(scanner.nextLine());
+                _playlist.add(scanner.nextLine());
             }
         } catch (FileNotFoundException e) {
-            System.out.println("Could not find songs.txt Exiting.");
-            System.exit(1);
+            System.out.println("Could not find songs.txt Playing Bassnectar.");
+            _playlist.add("https://www.youtube.com/playlist?list=PLx5V38jft_n-BoMo9Pf-3QlubIK7mMBb4");
         }
         this.playerManager = playerManager;
         this.player = player;
@@ -43,17 +43,17 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     private void processTracks() {
-        System.out.println("Processing " + AutoPlay.size() + " songs");
-        for (String song : new ArrayList<>(AutoPlay)) {
+        System.out.println("Processing " + _playlist.size() + " songs");
+        for (String song : new ArrayList<>(_playlist)) {
             if (isPlaylist(song)) {
                 parsePlaylist(song);
             }
         }
-        if (AutoPlay.isEmpty()) {
+        if (_playlist.isEmpty()) {
             System.out.println("No supported songs found!");
             System.exit(1);
         }
-        System.out.println(AutoPlay.size() + " songs loaded, starting");
+        System.out.println(_playlist.size() + " songs loaded, starting");
     }
 
     private boolean isPlaylist(String song) {
@@ -75,22 +75,22 @@ public class TrackScheduler extends AudioEventAdapter {
 
                 @Override
                 public void playlistLoaded(AudioPlaylist playlist) {
-                    AutoPlay.remove(song);
+                    _playlist.remove(song);
                     for (AudioTrack tr : playlist.getTracks()) {
                         String uri = tr.getInfo().uri;
-                        if (!AutoPlay.contains(uri)) AutoPlay.add(uri);
+                        if (!_playlist.contains(uri)) _playlist.add(uri);
                     }
                     System.out.println("Parsed playlist with " + playlist.getTracks().size() + " songs");
                 }
 
                 @Override
                 public void noMatches() {
-                    AutoPlay.remove(song);
+                    _playlist.remove(song);
                 }
 
                 @Override
                 public void loadFailed(FriendlyException exception) {
-                    AutoPlay.remove(song);
+                    _playlist.remove(song);
                 }
             }).get();
         } catch (InterruptedException | ExecutionException e) {
@@ -110,7 +110,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
     private String getRandomSong() {
         synchronized (RANDOM) {
-            return AutoPlay.get(RANDOM.nextInt(AutoPlay.size()));
+            return _playlist.get(RANDOM.nextInt(_playlist.size()));
         }
     }
 
@@ -121,7 +121,7 @@ public class TrackScheduler extends AudioEventAdapter {
             public void trackLoaded(AudioTrack track) {
                 System.out.println("Loaded! " + track.getInfo().title);
                 player.startTrack(track, false);
-                Login.Jda.getPresence().setGame(Game.playing("▶ " + track.getInfo().title));
+                BotManager.get_jda().getPresence().setGame(Game.playing("▶ " + track.getInfo().title));
             }
 
             @Override

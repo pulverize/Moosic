@@ -1,37 +1,59 @@
 package co.moosic.music;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.core.EmbedBuilder;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-
-import java.awt.*;
-import java.util.concurrent.TimeUnit;
-
 
 class MessageHandler extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent e) {
-        if (e.getMessage().getContentRaw().toLowerCase().startsWith(Config.command_prefix.toLowerCase() + "np")) {
-            AudioTrack PlayingTrack = MusicPlayer.GetPlayingTrack();
-            e.getChannel().sendMessage(new EmbedBuilder()
-                    .setAuthor("Now Playing", PlayingTrack.getInfo().uri, null)
-                    .setColor(Color.GREEN)
-                    .addField("Song Name", PlayingTrack.getInfo().title, true)
-                    .addField("Channel", PlayingTrack.getInfo().author, true)
-                    .addField("Song Progress", String.format("`%s / %s`", this.getLength(PlayingTrack.getPosition()), this.getLength(PlayingTrack.getInfo().length)), true)
-                    .addField("Song Link", "[Youtube Link](" + PlayingTrack.getInfo().uri + ")", true)
-                    .setThumbnail(String.format("https://img.youtube.com/vi/%s/hqdefault.jpg", PlayingTrack.getInfo().identifier))
-                    .build()
-            ).queue();
-        }
-    }
+        String message = e.getMessage().getContentRaw();
+        TextChannel textChannel = e.getChannel();
+        if(message.startsWith(Config.command_prefix))
+        {
+            String command = message.toLowerCase().substring(Config.command_prefix.length());
+            String[] commandWords = command.split("\\s");
 
-    private String getLength(long length) {
-        return String.format("%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(length),
-                TimeUnit.MILLISECONDS.toSeconds(length) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(length))
-        );
+            switch(commandWords[0])
+            {
+                case "np" :
+                case "playing":
+                case "nowplaying":
+                case "status":
+                case "track":
+                    AudioTrack playingTrack = MusicPlayer.GetPlayingTrack();
+                    if(playingTrack == null)
+                        MessageManager.SendMessage(textChannel,"No track appears to be playing.");
+                    AudioTrackState trackState = playingTrack.getState();
+                    if (trackState == null)
+                        MessageManager.SendMessage(textChannel, "Couldn't figure out WHAT is going on with that track. Something went seriously sideways.");
+                    else if(trackState != AudioTrackState.PLAYING)
+                        MessageManager.SendMessage(textChannel,"There is a track that should be playing but it is inactive, finished, seeking, or loading. Ask me again.");
+                    else
+                        MessageManager.SendTrackInfo(textChannel, playingTrack);
+                    break;
+                case "volume":
+                    if(commandWords.length > 1) {
+                        MusicPlayer.TrySetVolume(commandWords[1]);
+                    }
+                    break;
+                default:
+                    MessageManager.SendMessage(textChannel,"I don't know the command '" + command + "'. Try again.");
+                    break;
+            }
+
+            try {
+                e.getMessage().delete().complete();
+            }catch(InsufficientPermissionException ex){
+                MessageManager.SendMessage(textChannel,"I could not delete your command. Please give me permission to do so.");
+            }
+            catch(Exception ex){
+
+            }
+        }
     }
 }
